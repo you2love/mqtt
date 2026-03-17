@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>协议交互 - MQTT 教程</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="js/lib/mermaid.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -23,19 +23,19 @@
 
     <main class="container">
         <h1>MQTT 协议交互流程</h1>
-        
+
         <section class="interaction-section">
             <h2>1. 连接建立流程</h2>
             <div class="mermaid">
 sequenceDiagram
     participant C as Client
     participant B as Broker
-    
+
     C->>B: CONNECT<br/>(clientId, username, password,<br/>will, cleanSession)
     B-->>C: CONNACK<br/>(returnCode: 0=成功)
     Note over C,B: 连接建立完成
             </div>
-            
+
             <div class="code-block">
                 <pre><code># CONNECT 报文示例
 Packet Type: 0001 (CONNECT)
@@ -60,7 +60,31 @@ Payload:
         </section>
 
         <section class="interaction-section">
-            <h2>2. 发布/订阅流程（QoS 1）</h2>
+            <h2>2. QoS 0 发布流程</h2>
+            <div class="mermaid">
+sequenceDiagram
+    participant Pub as Publisher
+    participant B as Broker
+    participant Sub as Subscriber
+
+    Pub->>B: PUBLISH (QoS 0)<br/>topic: "sensors/temp"<br/>payload: "25.5°C"
+    B->>Sub: PUBLISH (QoS 0)<br/>topic: "sensors/temp"
+    Note over Pub,Sub: 无确认，消息可能丢失
+            </div>
+
+            <div class="info-box">
+                <h4>📌 QoS 0 特点</h4>
+                <ul>
+                    <li><strong>最多一次：</strong>消息最多传递一次，不保证送达</li>
+                    <li><strong>无确认机制：</strong>发送后不等待任何响应</li>
+                    <li><strong>最低开销：</strong>只有一个 PUBLISH 报文</li>
+                    <li><strong>适用场景：</strong>传感器数据频繁上报，允许少量丢失</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="interaction-section">
+            <h2>3. 发布/订阅流程（QoS 1）</h2>
             <div class="mermaid">
 sequenceDiagram
     participant Pub as Publisher
@@ -112,7 +136,7 @@ sequenceDiagram
         </section>
 
         <section class="interaction-section">
-            <h2>4. 遗嘱消息（Last Will）</h2>
+            <h2>5. 遗嘱消息（Last Will）</h2>
             <div class="mermaid">
 sequenceDiagram
     participant C as Client
@@ -131,7 +155,7 @@ sequenceDiagram
         </section>
 
         <section class="interaction-section">
-            <h2>5. 心跳保活机制</h2>
+            <h2>6. 心跳保活机制</h2>
             <div class="mermaid">
 sequenceDiagram
     participant C as Client
@@ -155,7 +179,7 @@ sequenceDiagram
         </section>
 
         <section class="interaction-section">
-            <h2>6. 断开连接</h2>
+            <h2>7. 断开连接</h2>
             <div class="mermaid">
 sequenceDiagram
     participant C as Client
@@ -168,7 +192,7 @@ sequenceDiagram
         </section>
 
         <section class="interaction-section">
-            <h2>7. 完整会话流程</h2>
+            <h2>8. 完整会话流程</h2>
             <div class="mermaid">
 sequenceDiagram
     participant Pub as Publisher
