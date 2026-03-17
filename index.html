@@ -45,6 +45,160 @@
             </div>
         </section>
 
+        <section class="broker-section">
+            <h2>MQTT Broker</h2>
+            <p>Broker 是 MQTT 架构的核心，负责接收、过滤、存储和转发所有消息。</p>
+            
+            <div class="broker-features">
+                <div class="broker-feature">
+                    <h4>📬 消息路由</h4>
+                    <p>根据主题将消息分发给所有订阅的客户端</p>
+                </div>
+                <div class="broker-feature">
+                    <h4>💾 会话管理</h4>
+                    <p>维护客户端连接状态和订阅关系</p>
+                </div>
+                <div class="broker-feature">
+                    <h4>📮 离线消息</h4>
+                    <p>为离线客户端缓存 QoS 1/2 消息</p>
+                </div>
+                <div class="broker-feature">
+                    <h4>🔒 安全认证</h4>
+                    <p>支持用户名密码、TLS、客户端证书等</p>
+                </div>
+            </div>
+            
+            <h3>常见 Broker 实现</h3>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>Broker</th>
+                        <th>语言</th>
+                        <th>特点</th>
+                        <th>适用场景</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Eclipse Mosquitto</strong></td>
+                        <td><code>C</code></td>
+                        <td>轻量级、低功耗、Eclipse 基金会项目</td>
+                        <td>嵌入式设备、边缘计算</td>
+                    </tr>
+                    <tr>
+                        <td><strong>EMQX</strong></td>
+                        <td><code>Erlang</code></td>
+                        <td>高并发、分布式、支持百万连接</td>
+                        <td>大规模 IoT 平台</td>
+                    </tr>
+                    <tr>
+                        <td><strong>HiveMQ</strong></td>
+                        <td><code>Java</code></td>
+                        <td>企业级、可扩展、支持集群</td>
+                        <td>企业应用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>VerneMQ</strong></td>
+                        <td><code>Erlang</code></td>
+                        <td>分布式、高可用、开源</td>
+                        <td>云原生应用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RabbitMQ</strong></td>
+                        <td><code>Erlang</code></td>
+                        <td>多协议支持、成熟稳定</td>
+                        <td>通用消息队列</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NanoMQ</strong></td>
+                        <td><code>C</code></td>
+                        <td>超轻量、边缘计算优化</td>
+                        <td>边缘网关</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>部署位置</h3>
+            <div class="deploy-grid">
+                <div class="deploy-card">
+                    <h4>☁️ 公有云</h4>
+                    <ul>
+                        <li>AWS IoT Core</li>
+                        <li>Azure IoT Hub</li>
+                        <li>阿里云 IoT Platform</li>
+                        <li>腾讯云 IoT Explorer</li>
+                    </ul>
+                    <p class="deploy-pros">✅ 免运维、弹性扩展、全球可用</p>
+                    <p class="deploy-cons">❌ 成本较高、数据出域</p>
+                </div>
+                <div class="deploy-card">
+                    <h4>🏢 私有化部署</h4>
+                    <ul>
+                        <li>自建数据中心</li>
+                        <li>私有云环境</li>
+                        <li>Kubernetes 集群</li>
+                    </ul>
+                    <p class="deploy-pros">✅ 数据可控、定制灵活、合规</p>
+                    <p class="deploy-cons">❌ 需运维、初期投入大</p>
+                </div>
+                <div class="deploy-card">
+                    <h4>🖥️ 边缘部署</h4>
+                    <ul>
+                        <li>工业网关</li>
+                        <li>边缘服务器</li>
+                        <li>树莓派等设备</li>
+                    </ul>
+                    <p class="deploy-pros">✅ 低延迟、离线可用、带宽节省</p>
+                    <p class="deploy-cons">❌ 资源受限、管理分散</p>
+                </div>
+            </div>
+            
+            <h3>快速开始：使用 Mosquitto</h3>
+            <div class="code-block">
+                <pre><code># 安装 Mosquitto (macOS)
+brew install mosquitto
+
+# 安装 Mosquitto (Ubuntu/Debian)
+sudo apt-get install mosquitto mosquitto-clients
+
+# 启动 Broker
+mosquitto -c /etc/mosquitto/mosquitto.conf
+
+# 测试：终端 1 - 订阅
+mosquitto_sub -h localhost -t "test/topic" -v
+
+# 测试：终端 2 - 发布
+mosquitto_pub -h localhost -t "test/topic" -m "Hello MQTT"</code></pre>
+            </div>
+            
+            <h3>配置示例：mosquitto.conf</h3>
+            <div class="code-block">
+                <pre><code># 监听端口
+listener 1883
+
+# 匿名访问（生产环境建议关闭）
+allow_anonymous false
+
+# 密码文件
+password_file /etc/mosquitto/passwd
+
+# TLS 加密
+listener 8883
+cafile /etc/mosquitto/ca.crt
+certfile /etc/mosquitto/server.crt
+keyfile /etc/mosquitto/server.key
+
+# 持久化
+persistence true
+persistence_location /var/lib/mosquitto/
+
+# 日志
+log_dest file /var/log/mosquitto/mosquitto.log
+log_type error
+log_type warning</code></pre>
+            </div>
+        </section>
+
         <section class="architecture">
             <h2>MQTT 架构</h2>
             <div class="architecture-diagram">
