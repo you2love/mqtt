@@ -199,6 +199,399 @@ log_type warning</code></pre>
             </div>
         </section>
 
+        <section class="deploy-section">
+            <h2>MQTT Broker 部署架构</h2>
+            
+            <h3>1. 云端部署（Cloud）</h3>
+            <div class="mermaid">
+graph TB
+    subgraph Cloud["公有云/私有云"]
+        LB["负载均衡器"]
+        subgraph Cluster["MQTT Broker 集群"]
+            N1["节点 1"]
+            N2["节点 2"]
+            N3["节点 3"]
+        end
+        DB[("时序数据库")]
+        RULE["规则引擎"]
+    end
+    
+    LB --> N1
+    LB --> N2
+    LB --> N3
+    N1 --> DB
+    N2 --> DB
+    N3 --> DB
+    N1 --> RULE
+    N2 --> RULE
+    N3 --> RULE
+    
+    DeviceA["设备 A<br/>传感器"] --> LB
+    DeviceB["设备 B<br/>摄像头"] --> LB
+    DeviceC["设备 C<br/>控制器"] --> LB
+            </div>
+            
+            <div class="deploy-info">
+                <h4>适用场景</h4>
+                <p>大规模物联网、全球分布式设备、需要弹性扩展</p>
+                
+                <h4>优势</h4>
+                <ul>
+                    <li>高可用性（99.99%+ SLA）</li>
+                    <li>弹性伸缩（百万级并发）</li>
+                    <li>免运维（托管服务）</li>
+                    <li>全球 CDN 加速</li>
+                </ul>
+                
+                <h4>主流云服务商</h4>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>服务商</th>
+                            <th>产品名称</th>
+                            <th>特点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>AWS</td>
+                            <td>AWS IoT Core</td>
+                            <td>与 AWS 生态深度集成</td>
+                        </tr>
+                        <tr>
+                            <td>Azure</td>
+                            <td>Azure IoT Hub</td>
+                            <td>企业级安全合规</td>
+                        </tr>
+                        <tr>
+                            <td>阿里云</td>
+                            <td>物联网平台</td>
+                            <td>国内低延迟，中文支持</td>
+                        </tr>
+                        <tr>
+                            <td>华为云</td>
+                            <td>IoTDA</td>
+                            <td>边缘协同能力强</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3>2. 边缘部署（Edge）</h3>
+            <div class="mermaid">
+graph TB
+    subgraph Edge["工厂/园区/楼宇"]
+        EB["边缘 MQTT Broker<br/>Mosquitto/EMQX Edge"]
+        Local["本地处理<br/>实时控制"]
+        Bridge["云端桥接<br/>数据同步"]
+        
+        EB --> Local
+        EB --> Bridge
+    end
+    
+    subgraph Devices["现场设备层"]
+        PLC["PLC 控制器<br/>Modbus/OPC UA"]
+        Sensor["传感器<br/>温度/压力"]
+        AGV["AGV 小车<br/>MQTT over 5G"]
+        Arm["机械臂<br/>实时控制"]
+    end
+    
+    PLC --> EB
+    Sensor --> EB
+    AGV --> EB
+    Arm --> EB
+            </div>
+            
+            <div class="deploy-info">
+                <h4>适用场景</h4>
+                <p>工业控制、低延迟要求、数据主权敏感、弱网环境</p>
+                
+                <h4>优势</h4>
+                <ul>
+                    <li>超低延迟：本地处理 &lt; 10ms</li>
+                    <li>离线自治：断网时继续工作</li>
+                    <li>数据安全：敏感数据不出厂</li>
+                    <li>带宽节省：仅上传汇总数据</li>
+                </ul>
+                
+                <h4>硬件形态</h4>
+                <ul>
+                    <li>工业网关（研华/研祥）</li>
+                    <li>边缘服务器（戴尔 Edge 系列）</li>
+                    <li>ARM 盒子（树莓派集群）</li>
+                    <li>5G MEC 节点</li>
+                </ul>
+            </div>
+            
+            <h3>3. 边云协同（混合部署）</h3>
+            <div class="mermaid">
+graph TB
+    subgraph Cloud["云端中心"]
+        CB["云端 MQTT Broker 集群<br/>全局管理/AI 训练/大数据分析"]
+        Rule["规则引擎<br/>数据流转"]
+        DW[("数据仓库<br/>时序 DB")]
+        CB --> Rule
+        CB --> DW
+    end
+    
+    subgraph Edge["边缘层"]
+        EB["边缘 MQTT Broker<br/>区域汇聚/本地决策"]
+    end
+    
+    subgraph Field["现场层"]
+        FB["现场 MQTT Broker<br/>产线级/设备级"]
+    end
+    
+    subgraph Devices["终端设备"]
+        D1["传感器"]
+        D2["执行器"]
+        D3["HMI 屏"]
+    end
+    
+    Cloud <-->|加密隧道/SD-WAN| Edge
+    Edge <--> Field
+    Field --> D1
+    Field --> D2
+    Field --> D3
+            </div>
+            
+            <div class="deploy-info">
+                <h4>数据流向</h4>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>层级</th>
+                            <th>延迟</th>
+                            <th>用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>现场设备 → 现场 Broker</td>
+                            <td>ms 级</td>
+                            <td>实时控制</td>
+                        </tr>
+                        <tr>
+                            <td>现场 Broker → 边缘 Broker</td>
+                            <td>10ms 级</td>
+                            <td>区域协同</td>
+                        </tr>
+                        <tr>
+                            <td>边缘 Broker → 云端 Broker</td>
+                            <td>100ms 级</td>
+                            <td>全局优化</td>
+                        </tr>
+                        <tr>
+                            <td>云端存储</td>
+                            <td>秒级</td>
+                            <td>AI 训练/BI</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="transport-section">
+            <h2>MQTT 底层传输协议</h2>
+            <p class="highlight-answer">核心答案：<strong>TCP/IP 为主，WebSocket 为辅</strong></p>
+            
+            <div class="protocol-stack">
+                <div class="stack-layer app">
+                    <span class="layer-name">应用层</span>
+                    <span class="layer-desc">MQTT 协议（发布订阅/遗嘱/QoS/保持会话）</span>
+                </div>
+                <div class="stack-layer transport">
+                    <span class="layer-name">传输层</span>
+                    <span class="layer-desc">TCP / WebSocket（可靠传输/端口 1883/8883/8083）</span>
+                </div>
+                <div class="stack-layer network">
+                    <span class="layer-name">网络层</span>
+                    <span class="layer-desc">IP（IPv4/IPv6）</span>
+                </div>
+                <div class="stack-layer link">
+                    <span class="layer-name">数据链路层/物理层</span>
+                    <span class="layer-desc">以太网/WiFi/4G/5G/LoRa/Zigbee</span>
+                </div>
+            </div>
+            
+            <h3>1. TCP（主要方式）</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant C as 客户端
+    participant B as Broker
+    
+    Note over C,B: TCP 三次握手
+    C->>B: SYN
+    B-->>C: SYN-ACK
+    C->>B: ACK
+    
+    Note over C,B: MQTT 连接建立
+    C->>B: CONNECT
+    B-->>C: CONNACK
+    
+    Note over C,B: 保持长连接（心跳）
+    loop 每 60 秒
+        C->>B: PINGREQ
+        B-->>C: PINGRESP
+    end
+            </div>
+            
+            <div class="port-table">
+                <h4>默认端口</h4>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>端口</th>
+                            <th>协议</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>1883</code></td>
+                            <td>MQTT over TCP</td>
+                            <td>明文传输</td>
+                        </tr>
+                        <tr>
+                            <td><code>8883</code></td>
+                            <td>MQTT over TLS/SSL</td>
+                            <td>加密传输</td>
+                        </tr>
+                        <tr>
+                            <td><code>8083</code></td>
+                            <td>MQTT over WebSocket</td>
+                            <td>浏览器连接</td>
+                        </tr>
+                        <tr>
+                            <td><code>8084</code></td>
+                            <td>MQTT over WebSocket Secure</td>
+                            <td>加密 Web 连接</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="info-box">
+                <h4>为什么选择 TCP？</h4>
+                <ul>
+                    <li><strong>可靠传输：</strong>内置重传机制，保证数据不丢</li>
+                    <li><strong>有序到达：</strong>消息按发送顺序到达</li>
+                    <li><strong>长连接支持：</strong>适合物联网设备持续在线</li>
+                    <li><strong>流量控制：</strong>防止网络拥塞</li>
+                </ul>
+            </div>
+            
+            <h3>2. TLS/SSL（安全加密层）</h3>
+            <div class="mermaid">
+sequenceDiagram
+    participant C as 客户端
+    participant B as Broker
+    
+    Note over C,B: TLS 握手阶段
+    C->>B: Client Hello
+    B-->>C: Server Hello + Certificate
+    C->>B: Client Key Exchange
+    B-->>C: Change Cipher Spec
+    
+    Note over C,B: 加密 MQTT 通信
+    C->>B: CONNECT (加密)
+    B-->>C: CONNACK (加密)
+    C->>B: PUBLISH/SUBSCRIBE (加密)
+            </div>
+            
+            <div class="info-box">
+                <h4>加密内容</h4>
+                <ul>
+                    <li>设备证书（X.509）双向认证</li>
+                    <li>用户名/密码加密传输</li>
+                    <li>所有 MQTT 报文 AES 加密</li>
+                    <li>防止中间人攻击/窃听</li>
+                </ul>
+            </div>
+            
+            <h3>3. WebSocket（浏览器支持）</h3>
+            <div class="mermaid">
+graph LR
+    subgraph Browser["浏览器/小程序"]
+        JS["JavaScript MQTT Client<br/>MQTT.js / Paho"]
+    end
+    
+    subgraph WS["WebSocket 帧封装"]
+        Header["WebSocket Header<br/>FIN, OPCODE, MASK..."]
+        Payload["MQTT Packet<br/>PUBLISH/SUBSCRIBE..."]
+    end
+    
+    subgraph Broker["MQTT Broker"]
+        TCP1883["1883/TCP"]
+        WS8083["8083/WebSocket"]
+    end
+    
+    JS -->|ws://broker:8083/mqtt| WS
+    WS -->|TCP 传输 | Broker
+    WS --> Header
+    WS --> Payload
+            </div>
+            
+            <div class="info-box">
+                <h4>WebSocket 优势</h4>
+                <ul>
+                    <li>浏览器原生支持，无需插件</li>
+                    <li>穿透防火墙（使用 80/443 端口）</li>
+                    <li>与 HTTP 共享服务器端口</li>
+                </ul>
+            </div>
+            
+            <h3>4. 其他底层协议</h3>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>协议</th>
+                        <th>端口</th>
+                        <th>适用场景</th>
+                        <th>特点</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>TCP</strong></td>
+                        <td>1883</td>
+                        <td>标准物联网设备</td>
+                        <td>最常用，成熟稳定</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TLS</strong></td>
+                        <td>8883</td>
+                        <td>安全敏感场景</td>
+                        <td>金融/医疗/政府</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WebSocket</strong></td>
+                        <td>8083</td>
+                        <td>Web 应用/小程序</td>
+                        <td>浏览器直接连接</td>
+                    </tr>
+                    <tr>
+                        <td><strong>WSS</strong></td>
+                        <td>8084</td>
+                        <td>安全 Web 应用</td>
+                        <td>WebSocket over TLS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>QUIC</strong></td>
+                        <td>8884</td>
+                        <td>低延迟移动场景</td>
+                        <td>基于 UDP，抗弱网</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MQTT-SN</strong></td>
+                        <td>1884</td>
+                        <td>极受限传感器</td>
+                        <td>无 TCP 开销，更轻量</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
         <section class="architecture">
             <h2>MQTT 架构</h2>
             <div class="architecture-diagram">

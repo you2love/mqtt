@@ -117,44 +117,34 @@
         <section class="packet-section">
             <h2>PUBLISH 报文详解</h2>
             <p>PUBLISH 报文用于向主题发送消息，结构最为复杂：</p>
-            
-            <div class="packet-structure detailed">
-                <div class="packet-row">
-                    <div class="packet-byte highlight">
-                        <span class="bit-label">Byte 1</span>
-                        <span class="bit-value">Fixed Header</span>
-                        <span class="bit-detail">Type=3, DUP, QoS, RETAIN</span>
-                    </div>
+
+            <div class="packet-structure horizontal">
+                <div class="packet-byte highlight">
+                    <span class="bit-label">Byte 1</span>
+                    <span class="bit-value">Fixed Header</span>
+                    <span class="bit-detail">Type=3, DUP, QoS, RETAIN</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte highlight">
-                        <span class="bit-label">Byte 2+</span>
-                        <span class="bit-value">Remaining Length</span>
-                    </div>
+                <div class="packet-byte highlight">
+                    <span class="bit-label">Byte 2+</span>
+                    <span class="bit-value">Remaining Length</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte">
-                        <span class="bit-label">Variable</span>
-                        <span class="bit-value">Topic Length (2 bytes)</span>
-                    </div>
+                <div class="packet-byte">
+                    <span class="bit-label">Variable</span>
+                    <span class="bit-value">Topic Length</span>
+                    <span class="bit-detail">2 bytes</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte">
-                        <span class="bit-label">Variable</span>
-                        <span class="bit-value">Topic Name</span>
-                    </div>
+                <div class="packet-byte">
+                    <span class="bit-label">Variable</span>
+                    <span class="bit-value">Topic Name</span>
                 </div>
-                <div class="packet-row" id="packet-qos-row">
-                    <div class="packet-byte conditional">
-                        <span class="bit-label">QoS > 0</span>
-                        <span class="bit-value">Packet Identifier (2 bytes)</span>
-                    </div>
+                <div class="packet-byte conditional">
+                    <span class="bit-label">QoS > 0</span>
+                    <span class="bit-value">Packet ID</span>
+                    <span class="bit-detail">2 bytes</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte payload">
-                        <span class="bit-label">Variable</span>
-                        <span class="bit-value">Payload</span>
-                    </div>
+                <div class="packet-byte payload">
+                    <span class="bit-label">Variable</span>
+                    <span class="bit-value">Payload</span>
                 </div>
             </div>
             
@@ -225,49 +215,39 @@ print(packet.hex())
 
         <section class="packet-section">
             <h2>CONNECT 报文结构</h2>
-            <div class="packet-structure detailed">
-                <div class="packet-row">
-                    <div class="packet-byte highlight">
-                        <span class="bit-label">Byte 1</span>
-                        <span class="bit-value">0x10 (CONNECT)</span>
-                    </div>
+            <div class="packet-structure horizontal">
+                <div class="packet-byte highlight">
+                    <span class="bit-label">Byte 1</span>
+                    <span class="bit-value">0x10</span>
+                    <span class="bit-detail">CONNECT</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte highlight">
-                        <span class="bit-label">Byte 2+</span>
-                        <span class="bit-value">Remaining Length</span>
-                    </div>
+                <div class="packet-byte highlight">
+                    <span class="bit-label">Byte 2+</span>
+                    <span class="bit-value">Remaining Length</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte">
-                        <span class="bit-label">Variable</span>
-                        <span class="bit-value">Protocol Name Length + "MQTT"</span>
-                    </div>
+                <div class="packet-byte">
+                    <span class="bit-label">Variable</span>
+                    <span class="bit-value">Protocol Name</span>
+                    <span class="bit-detail">Length + "MQTT"</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte">
-                        <span class="bit-label">Byte</span>
-                        <span class="bit-value">Protocol Level (0x04=3.1.1, 0x05=5.0)</span>
-                    </div>
+                <div class="packet-byte">
+                    <span class="bit-label">1 Byte</span>
+                    <span class="bit-value">Protocol Level</span>
+                    <span class="bit-detail">0x04=3.1.1</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte">
-                        <span class="bit-label">Byte</span>
-                        <span class="bit-value">Connect Flags</span>
-                        <span class="bit-detail">U R W Q W C</span>
-                    </div>
+                <div class="packet-byte">
+                    <span class="bit-label">1 Byte</span>
+                    <span class="bit-value">Connect Flags</span>
+                    <span class="bit-detail">U P W Q W C</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte">
-                        <span class="bit-label">2 Bytes</span>
-                        <span class="bit-value">Keep Alive</span>
-                    </div>
+                <div class="packet-byte">
+                    <span class="bit-label">2 Bytes</span>
+                    <span class="bit-value">Keep Alive</span>
                 </div>
-                <div class="packet-row">
-                    <div class="packet-byte payload">
-                        <span class="bit-label">Variable</span>
-                        <span class="bit-value">Payload (ClientID, Will, User, Pass)</span>
-                    </div>
+                <div class="packet-byte payload">
+                    <span class="bit-label">Variable</span>
+                    <span class="bit-value">Payload</span>
+                    <span class="bit-detail">ClientID, Will, User, Pass</span>
                 </div>
             </div>
             

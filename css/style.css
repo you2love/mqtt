@@ -196,6 +196,99 @@ main h4 {
     color: var(--danger-color);
 }
 
+/* 部署架构部分 */
+.deploy-section {
+    margin: 3rem 0;
+}
+
+.deploy-info {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin: 1.5rem 0;
+}
+
+.deploy-info h4 {
+    color: var(--primary-color);
+    margin: 1rem 0 0.8rem;
+}
+
+.deploy-info h4:first-child {
+    margin-top: 0;
+}
+
+.deploy-info ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.deploy-info li {
+    margin-bottom: 0.4rem;
+}
+
+/* 传输协议部分 */
+.transport-section {
+    margin: 3rem 0;
+}
+
+.highlight-answer {
+    background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(102, 126, 234, 0.1));
+    border-left: 4px solid var(--primary-color);
+    padding: 1rem 1.5rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 1.1rem;
+    margin: 1.5rem 0;
+}
+
+.protocol-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+}
+
+.stack-layer {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    gap: 1rem;
+}
+
+.stack-layer.app {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.stack-layer.transport {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+}
+
+.stack-layer.network {
+    background: linear-gradient(135deg, #20c997, #128c7e);
+    color: white;
+}
+
+.stack-layer.link {
+    background: linear-gradient(135deg, #fd7e14, #e8590c);
+    color: white;
+}
+
+.layer-name {
+    font-weight: 600;
+    min-width: 120px;
+}
+
+.layer-desc {
+    opacity: 0.9;
+}
+
+.port-table {
+    margin: 1.5rem 0;
+}
+
 /* 介绍区域 */
 .intro {
     margin-bottom: 3rem;
@@ -459,95 +552,24 @@ main h4 {
 }
 
 /* 序列图 */
-.sequence-diagram {
+.interaction-section {
+    margin: 2rem 0;
+}
+
+.mermaid {
     background: var(--card-bg);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: var(--shadow);
     margin: 1.5rem 0;
+    display: flex;
+    justify-content: center;
     overflow-x: auto;
 }
 
-.participant {
-    display: inline-block;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: white;
-    padding: 0.8rem 1.5rem;
-    border-radius: 8px;
-    margin: 0 1rem;
-    font-weight: 600;
-}
-
-.message {
-    position: relative;
-    margin: 1.5rem 0;
-    display: flex;
-    align-items: center;
-}
-
-.message.reverse {
-    flex-direction: row-reverse;
-}
-
-.message-line {
-    width: 200px;
-    height: 2px;
-    background: var(--primary-color);
-    position: relative;
-}
-
-.message-line::after {
-    content: "→";
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--primary-color);
-    font-size: 1.2rem;
-}
-
-.message.reverse .message-line::after {
-    content: "←";
-    left: 0;
-    right: auto;
-}
-
-.message-label {
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg-color);
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    font-size: 0.85rem;
-    text-align: center;
-    white-space: nowrap;
-    border: 1px solid var(--border-color);
-}
-
-.message-label small {
-    display: block;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    margin-top: 0.2rem;
-}
-
-.message.gap {
-    margin-top: 3rem;
-}
-
-.message.disconnect .message-line {
-    background: var(--danger-color);
-    border-top: 2px dashed var(--danger-color);
-}
-
-.message.will .message-line {
-    background: var(--warning-color);
-}
-
-.message.heartbeat .message-line {
-    background: var(--success-color);
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
 }
 
 /* 信息框 */
@@ -592,6 +614,31 @@ main h4 {
     flex-direction: column;
     gap: 0.5rem;
     margin: 1.5rem 0;
+}
+
+.packet-structure.horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.packet-structure.horizontal .packet-byte {
+    flex: 1;
+    min-width: 80px;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.3rem;
+}
+
+.packet-structure.horizontal .bit-label {
+    font-size: 0.65rem;
+}
+
+.packet-structure.horizontal .bit-value {
+    font-size: 0.7rem;
+}
+
+.packet-structure.horizontal .bit-detail {
+    font-size: 0.6rem;
 }
 
 .packet-row {
@@ -644,10 +691,6 @@ main h4 {
     font-size: 0.75rem;
     opacity: 0.9;
     margin-top: 0.3rem;
-}
-
-.packet-structure.detailed .packet-byte {
-    min-width: 200px;
 }
 
 /* 标志位图 */
