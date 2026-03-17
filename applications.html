@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常见应用 - MQTT 教程</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">MQTT Tutorial</a>
+            <ul class="nav-links">
+                <li><a href="index.html">概述</a></li>
+                <li><a href="protocol.html">协议交互</a></li>
+                <li><a href="packet.html">数据包构建</a></li>
+                <li><a href="applications.html" class="active">常见应用</a></li>
+                <li><a href="examples.html">代码示例</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>MQTT 常见应用场景</h1>
+        
+        <section class="app-section">
+            <h2>1. 物联网（IoT）设备监控</h2>
+            <div class="app-diagram">
+                <div class="app-device">
+                    <h4>📱 传感器设备</h4>
+                    <ul>
+                        <li>温度传感器</li>
+                        <li>湿度传感器</li>
+                        <li>压力传感器</li>
+                        <li>GPS 定位器</li>
+                    </ul>
+                </div>
+                <div class="app-arrow">→</div>
+                <div class="app-broker">
+                    <h4>🔄 MQTT Broker</h4>
+                    <p>消息路由与分发</p>
+                </div>
+                <div class="app-arrow">→</div>
+                <div class="app-server">
+                    <h4>🖥️ 后端服务</h4>
+                    <ul>
+                        <li>数据存储</li>
+                        <li>数据分析</li>
+                        <li>告警系统</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="code-block">
+                <pre><code># 典型主题设计
+devices/{device_id}/telemetry      # 遥测数据
+devices/{device_id}/status         # 设备状态
+devices/{device_id}/commands       # 控制命令
+devices/{device_id}/commands/resp  # 命令响应</code></pre>
+            </div>
+        </section>
+
+        <section class="app-section">
+            <h2>2. 实时消息推送</h2>
+            <p>MQTT 的长连接特性使其非常适合实时消息推送场景，如聊天应用、通知系统等。</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>💬 即时聊天</h3>
+                    <p>用户上线即订阅个人主题，消息实时送达</p>
+                    <div class="code-block small">
+                        <pre><code>users/{user_id}/messages
+users/{user_id}/presence</code></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3>🔔 系统通知</h3>
+                    <p>推送系统公告、订单状态变更等通知</p>
+                    <div class="code-block small">
+                        <pre><code>notifications/{user_id}
+orders/{order_id}/status</code></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3>📊 实时数据</h3>
+                    <p>股票行情、体育比分等实时数据推送</p>
+                    <div class="code-block small">
+                        <pre><code>stocks/{symbol}/price
+scores/{match_id}/live</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="app-section">
+            <h2>3. 智能家居系统</h2>
+            <div class="smart-home-diagram">
+                <div class="sh-center">
+                    <h4>🏠 智能家居中枢</h4>
+                    <p>MQTT Broker</p>
+                </div>
+                <div class="sh-devices">
+                    <div class="sh-device">
+                        <span>💡 智能灯泡</span>
+                        <code>home/lights/living-room</code>
+                    </div>
+                    <div class="sh-device">
+                        <span>🌡️ 温控器</span>
+                        <code>home/thermostat</code>
+                    </div>
+                    <div class="sh-device">
+                        <span>🔒 智能门锁</span>
+                        <code>home/locks/front-door</code>
+                    </div>
+                    <div class="sh-device">
+                        <span>📷 摄像头</span>
+                        <code>home/cameras/{id}/status</code>
+                    </div>
+                    <div class="sh-device">
+                        <span>🔔 传感器</span>
+                        <code>home/sensors/{type}</code>
+                    </div>
+                    <div class="sh-device">
+                        <span>📱 手机 App</span>
+                        <code>home/app/commands</code>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4>🏠 智能家居主题设计示例</h4>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>设备</th>
+                            <th>控制主题</th>
+                            <th>状态主题</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>灯泡</td>
+                            <td><code>home/lights/+/set</code></td>
+                            <td><code>home/lights/+/state</code></td>
+                        </tr>
+                        <tr>
+                            <td>窗帘</td>
+                            <td><code>home/blinds/+/set</code></td>
+                            <td><code>home/blinds/+/position</code></td>
+                        </tr>
+                        <tr>
+                            <td>空调</td>
+                            <td><code>home/ac/+/command</code></td>
+                            <td><code>home/ac/+/status</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="app-section">
+            <h2>4. 日志收集与监控</h2>
+            <p>使用 MQTT 收集分布式系统的日志和指标数据，通过 Retained Message 保留最新状态。</p>
+            
+            <div class="code-block">
+                <pre><code># 服务状态（使用 Retain 标志）
+services/{service_id}/health      # {"status": "healthy", "uptime": 3600}
+services/{service_id}/metrics     # {"cpu": 45%, "mem": 2.1GB}
+
+# 日志收集
+logs/{service_id}/{level}         # level: debug, info, warn, error
+logs/{service_id}/errors          # 仅错误日志
+
+# 告警
+alerts/{severity}/{service_id}    # severity: critical, warning, info</code></pre>
+            </div>
+            
+            <div class="architecture-diagram">
+                <div class="arch-component" style="flex:1">
+                    <h4>应用服务</h4>
+                    <p>发布日志/指标</p>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-component" style="flex:1">
+                    <h4>MQTT Broker</h4>
+                    <p>消息路由</p>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-component" style="flex:1">
+                    <h4>数据处理</h4>
+                    <p>存储/分析/告警</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="app-section">
+            <h2>5. 车联网（V2X）</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🚗 车辆遥测</h3>
+                    <p>实时上报车辆位置、速度、电量等数据</p>
+                    <div class="code-block small">
+                        <pre><code>vehicles/{vin}/location
+vehicles/{vin}/telemetry
+vehicles/{vin}/battery</code></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3>🔧 远程诊断</h3>
+                    <p>故障码上报、远程诊断命令</p>
+                    <div class="code-block small">
+                        <pre><code>vehicles/{vin}/diagnostics
+vehicles/{vin}/dtc         # 故障码</code></pre>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3>📡 OTA 升级</h3>
+                    <p>固件升级通知、进度上报</p>
+                    <div class="code-block small">
+                        <pre><code>vehicles/{vin}/ota/status
+vehicles/{vin}/ota/progress</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="app-section">
+            <h2>6. 工业物联网（IIoT）</h2>
+            <p>在工业环境中，MQTT 用于连接 PLC、传感器、SCADA 系统等设备。</p>
+            
+            <div class="info-box">
+                <h4>🏭 工业场景特点</h4>
+                <ul>
+                    <li><strong>高可靠性：</strong> 使用 QoS 1 或 QoS 2 确保消息送达</li>
+                    <li><strong>低延迟：</strong> 本地部署 Broker，减少网络延迟</li>
+                    <li><strong>安全性：</strong> TLS 加密 + 客户端证书认证</li>
+                    <li><strong>大规模：</strong> 支持数万设备并发连接</li>
+                </ul>
+            </div>
+            
+            <div class="code-block">
+                <pre><code># 工业主题命名规范（参考 Sparkplug B）
+spBv1.0/{Group ID}/DDATA/{Device ID}    # 设备数据
+spBv1.0/{Group ID}/NCMD/{Device ID}     # 节点命令
+spBv1.0/{Group ID}/DCMD/{Device ID}     # 设备命令
+spBv1.0/{Group ID}/STATE                # 边缘节点状态</code></pre>
+            </div>
+        </section>
+
+        <section class="app-section">
+            <h2>7. 移动应用消息同步</h2>
+            <p>移动 App 使用 MQTT 保持长连接，实现消息同步、状态更新等功能。</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>📲 消息同步</h3>
+                    <p>多设备消息同步，已读状态同步</p>
+                </div>
+                <div class="feature-card">
+                    <h3>👥 在线状态</h3>
+                    <p>使用 Last Will 实现下线检测</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔄 数据同步</h3>
+                    <p>使用 Retained Message 保存最新状态</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

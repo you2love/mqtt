@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT 协议教程 - 开发者指南</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">MQTT Tutorial</a>
+            <ul class="nav-links">
+                <li><a href="index.html">概述</a></li>
+                <li><a href="protocol.html">协议交互</a></li>
+                <li><a href="packet.html">数据包构建</a></li>
+                <li><a href="applications.html">常见应用</a></li>
+                <li><a href="examples.html">代码示例</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>MQTT 协议开发者指南</h1>
+            <p>Message Queuing Telemetry Transport - 轻量级物联网消息协议</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <h2>什么是 MQTT？</h2>
+            <p>MQTT（Message Queuing Telemetry Transport）是一种基于发布/订阅模式的轻量级消息传输协议，专为低带宽、高延迟或不可靠的网络环境设计。</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>📡 发布/订阅模式</h3>
+                    <p>解耦消息生产者和消费者，通过主题（Topic）进行消息路由</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🪶 轻量级</h3>
+                    <p>最小数据包仅 2 字节，适合资源受限的 IoT 设备</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔌 三种 QoS 级别</h3>
+                    <p>QoS 0（最多一次）、QoS 1（至少一次）、QoS 2（恰好一次）</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔄 持久会话</h3>
+                    <p>支持离线消息和遗嘱消息（Last Will）</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="architecture">
+            <h2>MQTT 架构</h2>
+            <div class="architecture-diagram">
+                <div class="arch-component publisher">
+                    <h4>发布者</h4>
+                    <p>发送消息的客户端</p>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-component broker">
+                    <h4>Broker</h4>
+                    <p>消息代理服务器</p>
+                    <p class="small">Mosquitto, EMQX, HiveMQ</p>
+                </div>
+                <div class="arch-arrow">→</div>
+                <div class="arch-component subscriber">
+                    <h4>订阅者</h4>
+                    <p>接收消息的客户端</p>
+                </div>
+            </div>
+            <p class="diagram-caption">图 1: MQTT 基本架构 - 所有消息通过 Broker 中转</p>
+        </section>
+
+        <section class="topics">
+            <h2>主题（Topic）</h2>
+            <p>主题是 UTF-8 编码的字符串，使用斜杠分隔层级：</p>
+            <div class="code-block">
+                <pre><code>home/living-room/temperature
+factory/line-1/sensor/pressure
+device/001/status</code></pre>
+            </div>
+            
+            <h3>通配符</h3>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>通配符</th>
+                        <th>说明</th>
+                        <th>示例</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>+</code></td>
+                        <td>单层通配符</td>
+                        <td><code>home/+/temperature</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>#</code></td>
+                        <td>多层通配符</td>
+                        <td><code>home/#</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="qos">
+            <h2>服务质量（QoS）</h2>
+            <div class="qos-grid">
+                <div class="qos-card qos-0">
+                    <h3>QoS 0</h3>
+                    <p class="qos-name">At most once</p>
+                    <p>消息最多传递一次，不保证送达，无确认机制</p>
+                    <div class="qos-flow">
+                        <span>PUBLISH</span>
+                    </div>
+                </div>
+                <div class="qos-card qos-1">
+                    <h3>QoS 1</h3>
+                    <p class="qos-name">At least once</p>
+                    <p>消息至少传递一次，可能重复，需要 PUBACK 确认</p>
+                    <div class="qos-flow">
+                        <span>PUBLISH</span> → <span>PUBACK</span>
+                    </div>
+                </div>
+                <div class="qos-card qos-2">
+                    <h3>QoS 2</h3>
+                    <p class="qos-name">Exactly once</p>
+                    <p>消息恰好传递一次，最可靠但开销最大</p>
+                    <div class="qos-flow">
+                        <span>PUBLISH</span> → <span>PUBREC</span> → <span>PUBREL</span> → <span>PUBCOMP</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

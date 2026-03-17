@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>协议交互 - MQTT 教程</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">MQTT Tutorial</a>
+            <ul class="nav-links">
+                <li><a href="index.html">概述</a></li>
+                <li><a href="protocol.html" class="active">协议交互</a></li>
+                <li><a href="packet.html">数据包构建</a></li>
+                <li><a href="applications.html">常见应用</a></li>
+                <li><a href="examples.html">代码示例</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>MQTT 协议交互流程</h1>
+        
+        <section class="interaction-section">
+            <h2>1. 连接建立流程</h2>
+            <div class="sequence-diagram">
+                <div class="participant client">Client</div>
+                <div class="participant broker">Broker</div>
+                
+                <div class="message">
+                    <div class="message-line"></div>
+                    <span class="message-label">CONNECT<br><small>clientId, username, password, will, cleanSession</small></span>
+                </div>
+                
+                <div class="message reverse">
+                    <div class="message-line"></div>
+                    <span class="message-label">CONNACK<br><small>returnCode: 0=成功</small></span>
+                </div>
+            </div>
+            
+            <div class="code-block">
+                <pre><code># CONNECT 报文示例
+Packet Type: 0001 (CONNECT)
+Flags: 0000
+Remaining Length: variable
+
+Payload:
+  - Protocol Name: "MQTT"
+  - Protocol Level: 4 (MQTT 3.1.1) or 5 (MQTT 5.0)
+  - Connect Flags:
+    * Clean Session: 1
+    * Will Flag: 0
+    * Will QoS: 00
+    * Will Retain: 0
+    * Password Flag: 1
+    * Username Flag: 1
+  - Keep Alive: 60 秒
+  - Client ID: "my-client-001"
+  - Username: "user123"
+  - Password: "pass456"</code></pre>
+            </div>
+        </section>
+
+        <section class="interaction-section">
+            <h2>2. 发布/订阅流程（QoS 1）</h2>
+            <div class="sequence-diagram">
+                <div class="participant publisher">Publisher</div>
+                <div class="participant broker">Broker</div>
+                <div class="participant subscriber">Subscriber</div>
+                
+                <!-- SUBSCRIBE -->
+                <div class="message">
+                    <div class="message-line"></div>
+                    <span class="message-label">SUBSCRIBE<br><small>topic: "sensors/temp", QoS: 1</small></span>
+                </div>
+                
+                <div class="message reverse">
+                    <div class="message-line"></div>
+                    <span class="message-label">SUBACK<br><small>Message ID: 1, Return QoS: 1</small></span>
+                </div>
+                
+                <!-- PUBLISH -->
+                <div class="message gap">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBLISH<br><small>topic: "sensors/temp", payload: "25.5°C"</small></span>
+                </div>
+                
+                <div class="message reverse gap">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBACK<br><small>Message ID: 100</small></span>
+                </div>
+                
+                <!-- Deliver to subscriber -->
+                <div class="message gap">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBLISH<br><small>delivered to subscriber</small></span>
+                </div>
+                
+                <div class="message reverse gap">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBACK<br><small>from subscriber</small></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="interaction-section">
+            <h2>3. QoS 2 完整握手流程</h2>
+            <div class="sequence-diagram qos2-diagram">
+                <div class="participant publisher">Publisher</div>
+                <div class="participant broker">Broker</div>
+                <div class="participant subscriber">Subscriber</div>
+                
+                <div class="message">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBLISH (QoS 2)<br><small>Message ID: 123</small></span>
+                </div>
+                
+                <div class="message reverse">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBREC<br><small>Message ID: 123</small></span>
+                </div>
+                
+                <div class="message">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBREL<br><small>Message ID: 123</small></span>
+                </div>
+                
+                <div class="message reverse">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBCOMP<br><small>Message ID: 123</small></span>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4>📌 QoS 2 四次握手说明</h4>
+                <ol>
+                    <li><strong>PUBLISH:</strong> 发布者发送消息</li>
+                    <li><strong>PUBREC:</strong> Broker 确认收到（Publish Received）</li>
+                    <li><strong>PUBREL:</strong> 发布者释放消息（Publish Release）</li>
+                    <li><strong>PUBCOMP:</strong> Broker 确认完成（Publish Complete）</li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="interaction-section">
+            <h2>4. 遗嘱消息（Last Will）</h2>
+            <div class="sequence-diagram">
+                <div class="participant client">Client</div>
+                <div class="participant broker">Broker</div>
+                <div class="participant subscribers">Subscribers</div>
+                
+                <div class="message">
+                    <div class="message-line"></div>
+                    <span class="message-label">CONNECT<br><small>Will Topic: "device/status"<br>Will Payload: "offline"<br>Will Retain: true</small></span>
+                </div>
+                
+                <div class="message reverse">
+                    <div class="message-line"></div>
+                    <span class="message-label">CONNACK<br><small>连接成功</small></span>
+                </div>
+                
+                <div class="message disconnect">
+                    <div class="message-line dashed"></div>
+                    <span class="message-label">⚠️ 客户端异常断开</span>
+                </div>
+                
+                <div class="message will">
+                    <div class="message-line"></div>
+                    <span class="message-label">PUBLISH (Will)<br><small>topic: "device/status"<br>payload: "offline" (Retained)</small></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="interaction-section">
+            <h2>5. 心跳保活机制</h2>
+            <div class="sequence-diagram">
+                <div class="participant client">Client</div>
+                <div class="participant broker">Broker</div>
+                
+                <div class="message">
+                    <div class="message-line"></div>
+                    <span class="message-label">CONNECT<br><small>Keep Alive: 60s</small></span>
+                </div>
+                
+                <div class="message reverse">
+                    <div class="message-line"></div>
+                    <span class="message-label">CONNACK</span>
+                </div>
+                
+                <div class="message heartbeat">
+                    <div class="message-line"></div>
+                    <span class="message-label">PINGREQ<br><small>&lt; 60s 内发送</small></span>
+                </div>
+                
+                <div class="message reverse heartbeat">
+                    <div class="message-line"></div>
+                    <span class="message-label">PINGRESP</span>
+                </div>
+            </div>
+            
+            <div class="info-box warning">
+                <h4>⚠️ 保活超时</h4>
+                <p>如果 Broker 在 1.5 倍 Keep Alive 时间内未收到任何消息，将断开连接并触发遗嘱消息（如果已设置）。</p>
+            </div>
+        </section>
+
+        <section class="interaction-section">
+            <h2>6. 断开连接</h2>
+            <div class="sequence-diagram">
+                <div class="participant client">Client</div>
+                <div class="participant broker">Broker</div>
+                
+                <div class="message">
+                    <div class="message-line"></div>
+                    <span class="message-label">DISCONNECT<br><small>优雅断开</small></span>
+                </div>
+                
+                <div class="message reverse">
+                    <div class="message-line dashed"></div>
+                    <span class="message-label">连接关闭<br><small>不触发遗嘱消息</small></span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

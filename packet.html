@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据包构建 - MQTT 教程</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">MQTT Tutorial</a>
+            <ul class="nav-links">
+                <li><a href="index.html">概述</a></li>
+                <li><a href="protocol.html">协议交互</a></li>
+                <li><a href="packet.html" class="active">数据包构建</a></li>
+                <li><a href="applications.html">常见应用</a></li>
+                <li><a href="examples.html">代码示例</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>MQTT 数据包结构</h1>
+        
+        <section class="packet-section">
+            <h2>固定报头（Fixed Header）</h2>
+            <p>每个 MQTT 数据包都由固定报头开始，结构如下：</p>
+            
+            <div class="packet-structure">
+                <div class="packet-row">
+                    <div class="packet-byte" style="--bits: 4">
+                        <span class="bit-label">Bit 7-4</span>
+                        <span class="bit-value">Packet Type</span>
+                    </div>
+                    <div class="packet-byte" style="--bits: 4">
+                        <span class="bit-label">Bit 3-0</span>
+                        <span class="bit-value">Flags</span>
+                    </div>
+                    <div class="packet-byte" style="--bits: 8">
+                        <span class="bit-label">Byte 2+</span>
+                        <span class="bit-value">Remaining Length</span>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>报文类型（Packet Type）</h3>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>类型</th>
+                        <th>值</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>CONNECT</td><td>1</td><td>客户端请求连接</td></tr>
+                    <tr><td>CONNACK</td><td>2</td><td>连接确认</td></tr>
+                    <tr><td>PUBLISH</td><td>3</td><td>发布消息</td></tr>
+                    <tr><td>PUBACK</td><td>4</td><td>QoS 1 确认</td></tr>
+                    <tr><td>PUBREC</td><td>5</td><td>QoS 2 收到（第一步）</td></tr>
+                    <tr><td>PUBREL</td><td>6</td><td>QoS 2 释放（第二步）</td></tr>
+                    <tr><td>PUBCOMP</td><td>7</td><td>QoS 2 完成（第三步）</td></tr>
+                    <tr><td>SUBSCRIBE</td><td>8</td><td>订阅请求</td></tr>
+                    <tr><td>SUBACK</td><td>9</td><td>订阅确认</td></tr>
+                    <tr><td>UNSUBSCRIBE</td><td>10</td><td>取消订阅</td></tr>
+                    <tr><td>UNSUBACK</td><td>11</td><td>取消订阅确认</td></tr>
+                    <tr><td>PINGREQ</td><td>12</td><td>心跳请求</td></tr>
+                    <tr><td>PINGRESP</td><td>13</td><td>心跳响应</td></tr>
+                    <tr><td>DISCONNECT</td><td>14</td><td>断开连接</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="packet-section">
+            <h2>剩余长度编码（Variable Byte Integer）</h2>
+            <p>MQTT 使用可变长度编码表示剩余长度，最多 4 字节，可表示 0 到 268,435,455 的长度。</p>
+            
+            <div class="encoding-demo">
+                <div class="encoding-row">
+                    <span class="encoding-label">值范围</span>
+                    <span class="encoding-value">字节数</span>
+                    <span class="encoding-example">示例</span>
+                </div>
+                <div class="encoding-row">
+                    <span class="encoding-label">0 - 127</span>
+                    <span class="encoding-value">1</span>
+                    <span class="encoding-example"><code>0x00 - 0x7F</code></span>
+                </div>
+                <div class="encoding-row">
+                    <span class="encoding-label">128 - 16,383</span>
+                    <span class="encoding-value">2</span>
+                    <span class="encoding-example"><code>0x80 0x01</code> = 128</span>
+                </div>
+                <div class="encoding-row">
+                    <span class="encoding-label">16,384 - 2,097,151</span>
+                    <span class="encoding-value">3</span>
+                    <span class="encoding-example"><code>0x80 0x80 0x01</code> = 16384</span>
+                </div>
+                <div class="encoding-row">
+                    <span class="encoding-label">2,097,152 - 268,435,455</span>
+                    <span class="encoding-value">4</span>
+                    <span class="encoding-example"><code>0x80 0x80 0x80 0x01</code></span>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h4>📐 编码规则</h4>
+                <ul>
+                    <li>每个字节的最高位（bit 7）是延续位：1 表示还有后续字节，0 表示最后一个字节</li>
+                    <li>低 7 位（bit 0-6）存储数据</li>
+                    <li>采用小端序（Little Endian）</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="packet-section">
+            <h2>PUBLISH 报文详解</h2>
+            <p>PUBLISH 报文用于向主题发送消息，结构最为复杂：</p>
+            
+            <div class="packet-structure detailed">
+                <div class="packet-row">
+                    <div class="packet-byte highlight">
+                        <span class="bit-label">Byte 1</span>
+                        <span class="bit-value">Fixed Header</span>
+                        <span class="bit-detail">Type=3, DUP, QoS, RETAIN</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte highlight">
+                        <span class="bit-label">Byte 2+</span>
+                        <span class="bit-value">Remaining Length</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte">
+                        <span class="bit-label">Variable</span>
+                        <span class="bit-value">Topic Length (2 bytes)</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte">
+                        <span class="bit-label">Variable</span>
+                        <span class="bit-value">Topic Name</span>
+                    </div>
+                </div>
+                <div class="packet-row" id="packet-qos-row">
+                    <div class="packet-byte conditional">
+                        <span class="bit-label">QoS > 0</span>
+                        <span class="bit-value">Packet Identifier (2 bytes)</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte payload">
+                        <span class="bit-label">Variable</span>
+                        <span class="bit-value">Payload</span>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Byte 1 标志位详解</h3>
+            <div class="flags-diagram">
+                <div class="flag-bit"><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span><span>0</span></div>
+                <div class="flag-bit values">
+                    <span class="flag-type">0</span>
+                    <span class="flag-type">0</span>
+                    <span class="flag-type">1</span>
+                    <span class="flag-type">1</span>
+                    <span class="flag-dup">DUP</span>
+                    <span class="flag-qos">QoS</span>
+                    <span class="flag-qos">QoS</span>
+                    <span class="flag-retain">RETAIN</span>
+                </div>
+                <div class="flag-labels">
+                    <span class="flag-label">Packet Type = 3</span>
+                    <span class="flag-label">Flags</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="packet-section">
+            <h2>构建示例：发送温度数据</h2>
+            <p>假设我们要发布一条温度消息：</p>
+            <ul class="example-params">
+                <li><strong>Topic:</strong> <code>sensors/temperature</code></li>
+                <li><strong>Payload:</strong> <code>{"temp": 25.5, "unit": "C"}</code></li>
+                <li><strong>QoS:</strong> 1</li>
+                <li><strong>Packet ID:</strong> 100</li>
+                <li><strong>Retain:</strong> false</li>
+            </ul>
+            
+            <div class="code-block">
+                <pre><code># 字节流构建过程
+
+# Byte 1: Packet Type (3) + Flags (QoS=1, DUP=0, Retain=0)
+# 0011 0010 = 0x32
+byte1 = 0x32
+
+# Topic: "sensors/temperature" (20 字节)
+topic = b'sensors/temperature'
+topic_length = len(topic)  # 20 = 0x0014
+
+# Packet Identifier (QoS 1 需要)
+packet_id = 100  # 0x0064
+
+# Payload
+payload = b'{"temp": 25.5, "unit": "C"}'
+
+# 计算 Remaining Length
+# 2 (topic length) + 20 (topic) + 2 (packet id) + 26 (payload) = 50
+remaining_length = 50  # 0x32
+
+# 完整报文
+packet = bytes([0x32, 0x32])  # Fixed header
+packet += (topic_length).to_bytes(2, 'big')  # Topic length
+packet += topic  # Topic
+packet += (packet_id).to_bytes(2, 'big')  # Packet ID
+packet += payload  # Payload
+
+# 十六进制输出
+print(packet.hex())
+# 输出：3232001473656e736f72732f74656d706572617475726500647b2274656d70223a2032352e352c2022756e6974223a202243227d</code></pre>
+            </div>
+        </section>
+
+        <section class="packet-section">
+            <h2>CONNECT 报文结构</h2>
+            <div class="packet-structure detailed">
+                <div class="packet-row">
+                    <div class="packet-byte highlight">
+                        <span class="bit-label">Byte 1</span>
+                        <span class="bit-value">0x10 (CONNECT)</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte highlight">
+                        <span class="bit-label">Byte 2+</span>
+                        <span class="bit-value">Remaining Length</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte">
+                        <span class="bit-label">Variable</span>
+                        <span class="bit-value">Protocol Name Length + "MQTT"</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte">
+                        <span class="bit-label">Byte</span>
+                        <span class="bit-value">Protocol Level (0x04=3.1.1, 0x05=5.0)</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte">
+                        <span class="bit-label">Byte</span>
+                        <span class="bit-value">Connect Flags</span>
+                        <span class="bit-detail">U R W Q W C</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte">
+                        <span class="bit-label">2 Bytes</span>
+                        <span class="bit-value">Keep Alive</span>
+                    </div>
+                </div>
+                <div class="packet-row">
+                    <div class="packet-byte payload">
+                        <span class="bit-label">Variable</span>
+                        <span class="bit-value">Payload (ClientID, Will, User, Pass)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Connect Flags 字节</h3>
+            <div class="flags-diagram">
+                <div class="flag-bit"><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span><span>0</span></div>
+                <div class="flag-bit values">
+                    <span>0</span>
+                    <span class="flag-username">U</span>
+                    <span class="flag-password">P</span>
+                    <span class="flag-will-retain">W.R</span>
+                    <span class="flag-will-qos">W.Q</span>
+                    <span class="flag-will-qos">W.Q</span>
+                    <span class="flag-will">W</span>
+                    <span class="flag-clean">C</span>
+                </div>
+                <div class="flag-labels">
+                    <span class="flag-label">Reserved</span>
+                    <span class="flag-label">User Flag</span>
+                    <span class="flag-label">Pass Flag</span>
+                    <span class="flag-label">Will Retain</span>
+                    <span class="flag-label">Will QoS</span>
+                    <span class="flag-label">Will Flag</span>
+                    <span class="flag-label">Clean Session</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

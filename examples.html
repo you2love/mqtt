@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码示例 - MQTT 教程</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">MQTT Tutorial</a>
+            <ul class="nav-links">
+                <li><a href="index.html">概述</a></li>
+                <li><a href="protocol.html">协议交互</a></li>
+                <li><a href="packet.html">数据包构建</a></li>
+                <li><a href="applications.html">常见应用</a></li>
+                <li><a href="examples.html" class="active">代码示例</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1>MQTT 代码示例</h1>
+        
+        <section class="code-section">
+            <div class="lang-tabs">
+                <button class="lang-tab active" data-lang="python">Python</button>
+                <button class="lang-tab" data-lang="go">Go</button>
+            </div>
+        </section>
+
+        <!-- Python Examples -->
+        <section class="code-section python-examples">
+            <h2>Python 示例 (使用 paho-mqtt)</h2>
+            <p class="install-hint">安装依赖：<code>pip install paho-mqtt</code></p>
+            
+            <h3>1. 基础连接与发布</h3>
+            <div class="code-block">
+                <pre><code>import paho.mqtt.client as mqtt
+import json
+import time
+
+# MQTT 配置
+BROKER = "broker.emqx.io"
+PORT = 1883
+CLIENT_ID = "python-client-001"
+USERNAME = "your_username"
+PASSWORD = "your_password"
+
+# 回调函数：连接成功
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print(f"✅ 已连接到 Broker: {BROKER}")
+        # 订阅主题
+        client.subscribe("sensors/temperature", qos=1)
+    else:
+        print(f"❌ 连接失败，返回码：{rc}")
+
+# 回调函数：收到消息
+def on_message(client, userdata, msg):
+    print(f"📩 收到消息 - 主题：{msg.topic}")
+    print(f"   QoS: {msg.qos}, 内容：{msg.payload.decode()}")
+
+# 回调函数：订阅确认
+def on_subscribe(client, userdata, mid, granted_qos):
+    print(f"✅ 订阅成功，QoS: {granted_qos}")
+
+# 创建客户端
+client = mqtt.Client(client_id=CLIENT_ID)
+client.username_pw_set(USERNAME, PASSWORD)
+
+# 设置回调
+client.on_connect = on_connect
+client.on_message = on_message
+client.on_subscribe = on_subscribe
+
+# 连接 Broker
+client.connect(BROKER, PORT, keepalive=60)
+
+# 发布消息
+for i in range(5):
+    payload = json.dumps({
+        "temperature": 25.5 + i * 0.1,
+        "humidity": 60,
+        "timestamp": time.time()
+    })
+    result = client.publish("sensors/temperature", payload, qos=1)
+    status, mid = result.wait_for_publish()
+    print(f"📤 已发布消息 #{i+1}, mid={mid}, status={status}")
+    time.sleep(1)
+
+# 启动网络循环（非阻塞）
+client.loop_start()
+
+# 保持运行
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("\n👋 正在断开连接...")
+    client.loop_stop()
+    client.disconnect()</code></pre>
+            </div>
+            
+            <h3>2. 使用 TLS 加密连接</h3>
+            <div class="code-block">
+                <pre><code>import paho.mqtt.client as mqtt
+import ssl
+
+# TLS 配置
+BROKER = "broker.example.com"
+PORT = 8883  # TLS 端口
+CA_CERTS = "ca.crt"
+CLIENT_CERT = "client.crt"
+CLIENT_KEY = "client.key"
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("✅ 安全连接已建立")
+    else:
+        print(f"❌ 连接失败：{rc}")
+
+client = mqtt.Client(client_id="secure-client")
+
+# 配置 TLS
+client.tls_set(
+    ca_certs=CA_CERTS,
+    certfile=CLIENT_CERT,
+    keyfile=CLIENT_KEY,
+    tls_version=ssl.PROTOCOL_TLSv1_2
+)
+
+# 可选：禁用主机名验证（仅测试用）
+# client.tls_insecure_set(True)
+
+client.on_connect = on_connect
+client.connect(BROKER, PORT, keepalive=60)
+client.loop_forever()</code></pre>
+            </div>
+            
+            <h3>3. 遗嘱消息（Last Will）</h3>
+            <div class="code-block">
+                <pre><code>import paho.mqtt.client as mqtt
+import json
+
+BROKER = "broker.emqx.io"
+PORT = 1883
+
+# 配置遗嘱消息
+will_payload = json.dumps({
+    "status": "offline",
+    "reason": "unexpected_disconnect"
+})
+
+client = mqtt.Client(client_id="device-001")
+
+# 设置遗嘱
+client.will_set(
+    topic="devices/device-001/status",
+    payload=will_payload,
+    qos=1,
+    retain=True  # 保留消息
+)
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("✅ 连接成功，遗嘱消息已设置")
+        # 发布在线状态
+        client.publish(
+            "devices/device-001/status",
+            json.dumps({"status": "online"}),
+            qos=1,
+            retain=True
+        )
+
+client.on_connect = on_connect
+client.connect(BROKER, PORT)
+client.loop_forever()</code></pre>
+            </div>
+            
+            <h3>4. 完整的生产者 - 消费者示例</h3>
+            <div class="code-block">
+                <pre><code>"""
+MQTT 生产者 - 消费者完整示例
+模拟 IoT 设备数据上报与处理
+"""
+import paho.mqtt.client as mqtt
+import json
+import random
+import time
+from datetime import datetime
+from typing import Optional
+
+class MQTTDataPublisher:
+    """MQTT 数据发布者"""
+    
+    def __init__(self, broker: str, port: int, client_id: str):
+        self.broker = broker
+        self.port = port
+        self.client_id = client_id
+        self.client: Optional[mqtt.Client] = None
+        self.connected = False
+        
+    def connect(self):
+        """连接到 MQTT Broker"""
+        self.client = mqtt.Client(client_id=self.client_id)
+        self.client.on_connect = self._on_connect
+        self.client.on_disconnect = self._on_disconnect
+        self.client.connect(self.broker, self.port, keepalive=60)
+        self.client.loop_start()
+        
+    def _on_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            self.connected = True
+            print(f"✅ {self.client_id} 已连接")
+        else:
+            print(f"❌ 连接失败：{rc}")
+            
+    def _on_disconnect(self, client, userdata, rc):
+        self.connected = False
+        print(f"🔌 {self.client_id} 已断开")
+        
+    def publish_sensor_data(self, device_id: str, temp: float, humidity: float):
+        """发布传感器数据"""
+        if not self.connected:
+            return False
+            
+        payload = {
+            "device_id": device_id,
+            "temperature": temp,
+            "humidity": humidity,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        topic = f"sensors/{device_id}/telemetry"
+        result = self.client.publish(topic, json.dumps(payload), qos=1)
+        return result.is_published()
+        
+    def disconnect(self):
+        """断开连接"""
+        if self.client:
+            self.client.loop_stop()
+            self.client.disconnect()
+
+
+class MQTTDataConsumer:
+    """MQTT 数据消费者"""
+    
+    def __init__(self, broker: str, port: int, client_id: str):
+        self.broker = broker
+        self.port = port
+        self.client_id = client_id
+        self.client: Optional[mqtt.Client] = None
+        
+    def connect(self, topics: list):
+        """连接并订阅主题"""
+        self.client = mqtt.Client(client_id=self.client_id)
+        self.client.on_connect = self._on_connect
+        self.client.on_message = self._on_message
+        
+        self.client.connect(self.broker, self.port, keepalive=60)
+        
+        # 订阅主题
+        for topic in topics:
+            self.client.subscribe(topic, qos=1)
+            print(f"📬 订阅主题：{topic}")
+            
+        self.client.loop_forever()
+        
+    def _on_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            print(f"✅ 消费者 {self.client_id} 已连接")
+        else:
+            print(f"❌ 连接失败：{rc}")
+            
+    def _on_message(self, client, userdata, msg):
+        """处理收到的消息"""
+        try:
+            data = json.loads(msg.payload.decode())
+            print(f"\n📩 收到数据:")
+            print(f"   主题：{msg.topic}")
+            print(f"   设备：{data.get('device_id')}")
+            print(f"   温度：{data.get('temperature')}°C")
+            print(f"   湿度：{data.get('humidity')}%")
+            print(f"   时间：{data.get('timestamp')}")
+            
+            # 这里可以添加数据处理逻辑
+            self._process_data(data)
+            
+        except json.JSONDecodeError:
+            print(f"❌ 无法解析消息：{msg.payload}")
+            
+    def _process_data(self, data: dict):
+        """处理传感器数据"""
+        temp = data.get('temperature', 0)
+        if temp > 30:
+            print(f"   ⚠️  高温告警：{temp}°C")
+        elif temp < 10:
+            print(f"   ⚠️  低温告警：{temp}°C")
+
+
+# 使用示例
+if __name__ == "__main__":
+    BROKER = "broker.emqx.io"
+    PORT = 1883
+    
+    # 创建发布者
+    publisher = MQTTDataPublisher(BROKER, PORT, "publisher-001")
+    publisher.connect()
+    
+    # 创建消费者（在另一个线程或进程中运行）
+    # consumer = MQTTDataConsumer(BROKER, PORT, "consumer-001")
+    # consumer.connect(["sensors/+/telemetry"])
+    
+    # 模拟发布数据
+    try:
+        for i in range(10):
+            publisher.publish_sensor_data(
+                device_id=f"sensor-{i % 3 + 1}",
+                temp=random.uniform(20, 35),
+                humidity=random.uniform(40, 80)
+            )
+            time.sleep(2)
+    except KeyboardInterrupt:
+        print("\n👋 停止发布")
+    finally:
+        publisher.disconnect()</code></pre>
+            </div>
+        </section>
+
+        <!-- Go Examples -->
+        <section class="code-section go-examples" style="display: none;">
+            <h2>Go 示例 (使用 eclipse/paho.mqtt.golang)</h2>
+            <p class="install-hint">安装依赖：<code>go get github.com/eclipse/paho.mqtt.golang</code></p>
+            
+            <h3>1. 基础连接与发布</h3>
+            <div class="code-block">
+                <pre><code>package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+// MQTT 配置
+const (
+	Broker   = "tcp://broker.emqx.io:1883"
+	ClientID = "go-client-001"
+	Username = "your_username"
+	Password = "your_password"
+)
+
+// 传感器数据结构
+type SensorData struct {
+	Temperature float64 `json:"temperature"`
+	Humidity    float64 `json:"humidity"`
+	Timestamp   int64   `json:"timestamp"`
+}
+
+func main() {
+	// 创建客户端选项
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(Broker)
+	opts.SetClientID(ClientID)
+	opts.SetUsername(Username)
+	opts.SetPassword(Password)
+	opts.SetKeepAlive(60 * time.Second)
+	opts.SetPingTimeout(10 * time.Second)
+
+	// 连接丢失回调
+	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
+		log.Printf("❌ 连接丢失：%v", err)
+	})
+
+	// 重连回调
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
+		log.Println("✅ 已连接到 Broker")
+		// 订阅主题
+		token := client.Subscribe("sensors/temperature", 1, messageHandler)
+		token.Wait()
+		if token.Error() != nil {
+			log.Printf("❌ 订阅失败：%v", token.Error())
+		} else {
+			log.Println("✅ 订阅成功")
+		}
+	})
+
+	// 创建并连接客户端
+	client := mqtt.NewClient(opts)
+	token := client.Connect()
+	token.Wait()
+	if token.Error() != nil {
+		log.Fatalf("❌ 连接失败：%v", token.Error())
+	}
+
+	// 发布消息
+	for i := 0; i < 5; i++ {
+		data := SensorData{
+			Temperature: 25.5 + float64(i)*0.1,
+			Humidity:    60.0,
+			Timestamp:   time.Now().Unix(),
+		}
+
+		payload, _ := json.Marshal(data)
+		token := client.Publish("sensors/temperature", 1, false, payload)
+		token.Wait()
+
+		if token.Error() != nil {
+			log.Printf("❌ 发布失败：%v", token.Error())
+		} else {
+			log.Printf("📤 已发布消息 #%d: %s", i+1, string(payload))
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
+	// 保持运行
+	time.Sleep(5 * time.Second)
+
+	// 断开连接
+	client.Disconnect(250)
+	log.Println("👋 已断开连接")
+}
+
+// 消息处理回调
+func messageHandler(client mqtt.Client, msg mqtt.Message) {
+	log.Printf("📩 收到消息 - 主题：%s", msg.Topic())
+	log.Printf("   QoS: %d, 内容：%s", msg.Qos(), string(msg.Payload()))
+}</code></pre>
+            </div>
+            
+            <h3>2. 使用 TLS 加密连接</h3>
+            <div class="code-block">
+                <pre><code>package main
+
+import (
+	"crypto/tls"
+	"crypto/x509"
+	"log"
+	"os"
+	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+func createTLSConfig(caCertPath, clientCertPath, clientKeyPath string) (*tls.Config, error) {
+	// 加载 CA 证书
+	caCert, err := os.ReadFile(caCertPath)
+	if err != nil {
+		return nil, err
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	// 加载客户端证书
+	cert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建 TLS 配置
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+		MinVersion:   tls.VersionTLS12,
+	}
+
+	return tlsConfig, nil
+}
+
+func main() {
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker("ssl://broker.example.com:8883")
+	opts.SetClientID("secure-go-client")
+
+	// 配置 TLS
+	tlsConfig, err := createTLSConfig("ca.crt", "client.crt", "client.key")
+	if err != nil {
+		log.Fatalf("❌ TLS 配置失败：%v", err)
+	}
+	opts.SetTLSConfig(tlsConfig)
+
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
+		log.Println("✅ 安全连接已建立")
+	})
+
+	client := mqtt.NewClient(opts)
+	token := client.Connect()
+	token.Wait()
+	if token.Error() != nil {
+		log.Fatalf("❌ 连接失败：%v", token.Error())
+	}
+
+	// 保持连接
+	select {}
+}</code></pre>
+            </div>
+            
+            <h3>3. 遗嘱消息（Last Will）</h3>
+            <div class="code-block">
+                <pre><code>package main
+
+import (
+	"encoding/json"
+	"log"
+	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+type Status struct {
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+func main() {
+	willPayload, _ := json.Marshal(Status{
+		Status: "offline",
+		Reason: "unexpected_disconnect",
+	})
+
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker("tcp://broker.emqx.io:1883")
+	opts.SetClientID("device-001")
+
+	// 设置遗嘱消息
+	opts.SetWill("devices/device-001/status", string(willPayload), 1, true)
+
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
+		log.Println("✅ 连接成功，遗嘱消息已设置")
+
+		// 发布在线状态
+		onlinePayload, _ := json.Marshal(Status{Status: "online"})
+		client.Publish("devices/device-001/status", 1, true, onlinePayload)
+	})
+
+	client := mqtt.NewClient(opts)
+	token := client.Connect()
+	token.Wait()
+	if token.Error() != nil {
+		log.Fatalf("❌ 连接失败：%v", token.Error())
+	}
+
+	// 保持运行
+	select {}
+}</code></pre>
+            </div>
+            
+            <h3>4. 完整的生产者 - 消费者示例</h3>
+            <div class="code-block">
+                <pre><code>package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"math/rand"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+// 传感器数据
+type SensorData struct {
+	DeviceID    string  `json:"device_id"`
+	Temperature float64 `json:"temperature"`
+	Humidity    float64 `json:"humidity"`
+	Timestamp   string  `json:"timestamp"`
+}
+
+// MQTTPublisher MQTT 发布者
+type MQTTPublisher struct {
+	client    mqtt.Client
+	broker    string
+	clientID  string
+	connected bool
+}
+
+func NewMQTTPublisher(broker, clientID string) *MQTTPublisher {
+	return &MQTTPublisher{
+		broker:   broker,
+		clientID: clientID,
+	}
+}
+
+func (p *MQTTPublisher) Connect() error {
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(p.broker)
+	opts.SetClientID(p.clientID)
+	opts.SetKeepAlive(60 * time.Second)
+
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
+		log.Printf("✅ %s 已连接", p.clientID)
+		p.connected = true
+	})
+
+	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
+		log.Printf("❌ 连接丢失：%v", err)
+		p.connected = false
+	})
+
+	p.client = mqtt.NewClient(opts)
+	token := p.client.Connect()
+	token.Wait()
+	return token.Error()
+}
+
+func (p *MQTTPublisher) PublishSensorData(deviceID string, temp, humidity float64) error {
+	if !p.connected {
+		return fmt.Errorf("未连接")
+	}
+
+	data := SensorData{
+		DeviceID:    deviceID,
+		Temperature: temp,
+		Humidity:    humidity,
+		Timestamp:   time.Now().Format(time.RFC3339),
+	}
+
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	topic := fmt.Sprintf("sensors/%s/telemetry", deviceID)
+	token := p.client.Publish(topic, 1, false, payload)
+	token.Wait()
+	return token.Error()
+}
+
+func (p *MQTTPublisher) Disconnect() {
+	if p.client != nil {
+		p.client.Disconnect(250)
+	}
+}
+
+// MQTTConsumer MQTT 消费者
+type MQTTConsumer struct {
+	client   mqtt.Client
+	broker   string
+	clientID string
+}
+
+func NewMQTTConsumer(broker, clientID string) *MQTTConsumer {
+	return &MQTTConsumer{
+		broker:   broker,
+		clientID: clientID,
+	}
+}
+
+func (c *MQTTConsumer) Connect(topics []string) error {
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(c.broker)
+	opts.SetClientID(c.clientID)
+	opts.SetKeepAlive(60 * time.Second)
+
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
+		log.Printf("✅ 消费者 %s 已连接", c.clientID)
+		// 订阅主题
+		for _, topic := range topics {
+			token := client.Subscribe(topic, 1, c.messageHandler)
+			token.Wait()
+			if token.Error() != nil {
+				log.Printf("❌ 订阅失败 %s: %v", topic, token.Error())
+			} else {
+				log.Printf("📬 订阅主题：%s", topic)
+			}
+		}
+	})
+
+	c.client = mqtt.NewClient(opts)
+	token := c.client.Connect()
+	token.Wait()
+	return token.Error()
+}
+
+func (c *MQTTConsumer) messageHandler(client mqtt.Client, msg mqtt.Message) {
+	var data SensorData
+	if err := json.Unmarshal(msg.Payload(), &data); err != nil {
+		log.Printf("❌ 解析失败：%v", err)
+		return
+	}
+
+	log.Printf("\n📩 收到数据:")
+	log.Printf("   主题：%s", msg.Topic())
+	log.Printf("   设备：%s", data.DeviceID)
+	log.Printf("   温度：%.1f°C", data.Temperature)
+	log.Printf("   湿度：%.1f%%", data.Humidity)
+	log.Printf("   时间：%s", data.Timestamp)
+
+	// 处理告警
+	c.processAlerts(data)
+}
+
+func (c *MQTTConsumer) processAlerts(data SensorData) {
+	if data.Temperature > 30 {
+		log.Printf("   ⚠️  高温告警：%.1f°C", data.Temperature)
+	} else if data.Temperature < 10 {
+		log.Printf("   ⚠️  低温告警：%.1f°C", data.Temperature)
+	}
+}
+
+func main() {
+	const broker = "tcp://broker.emqx.io:1883"
+
+	// 创建发布者
+	publisher := NewMQTTPublisher(broker, "go-publisher-001")
+	if err := publisher.Connect(); err != nil {
+		log.Fatalf("❌ 发布者连接失败：%v", err)
+	}
+	defer publisher.Disconnect()
+
+	// 创建消费者（在实际应用中可能在另一个进程）
+	// consumer := NewMQTTConsumer(broker, "go-consumer-001")
+	// consumer.Connect([]string{"sensors/+/telemetry"})
+
+	// 设置信号处理
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// 发布数据
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	deviceIDs := []string{"sensor-1", "sensor-2", "sensor-3"}
+	count := 0
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("\n👋 正在退出...")
+			return
+		case <-ticker.C:
+			deviceID := deviceIDs[count%len(deviceIDs)]
+			temp := 20 + rand.Float64()*15
+			humidity := 40 + rand.Float64()*40
+
+			if err := publisher.PublishSensorData(deviceID, temp, humidity); err != nil {
+				log.Printf("❌ 发布失败：%v", err)
+			} else {
+				log.Printf("📤 已发布：设备=%s, 温度=%.1f°C", deviceID, temp)
+			}
+			count++
+		}
+	}
+}</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
