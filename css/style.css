@@ -604,6 +604,15 @@ main h4 {
     margin-bottom: 0.5rem;
 }
 
+.qos2-summary {
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 5px;
+    color: var(--success-color);
+    font-weight: 500;
+}
+
 /* 数据包结构 */
 .packet-section {
     margin: 2rem 0;
